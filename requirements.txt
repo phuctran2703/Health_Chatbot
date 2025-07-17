@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+chromadb
+numpy<2.0
+jinja2
+langchain-google-genai
+langchain-core
+python-dotenv

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Chatbot - Tư Vấn Sức Khỏe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style-minimal.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'heartbeat': 'heartbeat 2s ease-in-out infinite',
+                        'slideIn': 'slideIn 0.3s ease-out',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-inter bg-white h-screen text-gray-800 leading-relaxed overflow-hidden">
+    <div class="h-screen flex flex-col bg-white">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 py-3 px-6 flex-shrink-0 shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-heartbeat text-lg text-red-500 animate-heartbeat"></i>
+                <h1 class="text-lg font-bold text-gray-800">Health Chatbot</h1>
+                <span class="text-xs text-gray-500 ml-2">AI Tư vấn sức khỏe</span>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col min-h-0">
+            <div class="flex-1 overflow-y-auto px-6 md:px-16 lg:px-32 xl:px-48 py-6 scroll-smooth" id="chatMessages">
+                <!-- Welcome Message -->
+                <div class="flex mb-6 animate-slideIn">
+                    <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-robot text-xs"></i>
+                    </div>
+                    <div class="max-w-4xl flex flex-col">
+                        <div class="bg-gradient-to-br from-green-50 to-blue-50 border-green-200 rounded-bl-lg p-4 rounded-xl shadow-sm mb-2 border">
+                            <p class="mb-2 text-sm text-gray-700">Xin chào! Tôi có thể giúp bạn tư vấn về:</p>
+                            <div class="grid grid-cols-2 gap-2 my-3 text-xs">
+                                <div class="flex items-center gap-1">
+                                    <span>🩺</span>
+                                    <span>Triệu chứng bệnh</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span>💊</span>
+                                    <span>Thuốc & điều trị</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span>🏃‍♂️</span>
+                                    <span>Lối sống lành mạnh</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span>🍎</span>
+                                    <span>Dinh dưỡng</span>
+                                </div>
+                            </div>
+                            <p class="bg-amber-50 border border-amber-200 rounded-md p-2 mt-3 text-xs text-amber-800">
+                                ⚠️ <em>Chỉ mang tính tham khảo. Hãy tham khảo bác sĩ để chẩn đoán chính xác.</em>
+                            </p>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1" id="welcomeTime"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="px-6 md:px-16 lg:px-32 xl:px-48 py-4 bg-white border-t border-gray-100 flex-shrink-0">
+                <div class="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-200 focus-within:border-indigo-300 focus-within:bg-white transition-all duration-300">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Hãy mô tả triệu chứng hoặc câu hỏi về sức khỏe của bạn..."
+                        rows="1"
+                        maxlength="500"
+                        class="flex-1 border-none bg-transparent resize-none outline-none font-inherit text-sm leading-relaxed max-h-24 min-h-6 placeholder-gray-400"
+                    ></textarea>
+                    <button id="sendButton" class="bg-gradient-to-br from-indigo-500 to-purple-600 border-none rounded-full w-9 h-9 text-white cursor-pointer flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100 flex-shrink-0" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
+                    <span class="char-count font-medium">0/500</span>
+                    <span class="italic">Nhấn Enter để gửi, Shift+Enter để xuống dòng</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden" id="loadingOverlay">
+            <div class="bg-white p-8 rounded-2xl text-center shadow-2xl">
+                <i class="fas fa-heartbeat text-5xl text-red-400 mb-4 animate-heartbeat"></i>
+                <p class="text-gray-600 font-medium">Đang phân tích và tìm kiếm thông tin...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="fixed top-8 right-8 z-50" id="toastContainer"></div>
+
+    <script>
+        // Set current time for welcome message
+        document.addEventListener('DOMContentLoaded', function() {
+            const welcomeTime = document.getElementById('welcomeTime');
+            if (welcomeTime) {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                welcomeTime.textContent = `${hours}:${minutes}`;
+            }
+        });
+    </script>
+    <script src="/static/script-minimal.js"></script>
+</body>
+</html>
