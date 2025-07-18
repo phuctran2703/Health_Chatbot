@@ -294,7 +294,7 @@ function getErrorMessage(error) {
     if (error.message.includes('Failed to fetch')) {
         return `<strong>Không thể kết nối với server</strong><br>
                 Vui lòng kiểm tra kết nối mạng và thử lại sau.<br><br>
-                <em>💡 Gợi ý: Đảm bảo server đang chạy và ChromaDB đã được khởi động.</em>`;
+                <em>💡 Gợi ý: Đảm bảo server đang chạy.</em>`;
     } else if (error.message.includes('500')) {
         return `<strong>Lỗi server nội bộ</strong><br>
                 Server đang gặp sự cố kỹ thuật. Vui lòng thử lại sau ít phút.`;
@@ -323,9 +323,6 @@ async function checkApiHealth() {
         if (response.ok) {
             const data = await response.json();
             console.log('API Health:', data);
-            if (data.chromadb_status !== 'connected') {
-                showToast('ChromaDB chưa kết nối - một số tính năng có thể bị hạn chế', 'warning');
-            }
             if (data.gemini_ai_status === 'available') {
                 showToast('Gemini AI đã sẵn sàng - chatbot được hỗ trợ AI', 'success');
             } else if (data.gemini_ai_status === 'not_configured') {

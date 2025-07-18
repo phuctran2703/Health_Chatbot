@@ -4,7 +4,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import uvicorn
-import chromadb
 import os
 import json
 import time
@@ -23,11 +22,6 @@ app = FastAPI(title="Health Chatbot API", version="1.0.0")
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
-# ChromaDB client configuration
-CHROMADB_HOST = os.getenv("CHROMADB_HOST", "localhost")
-CHROMADB_PORT = os.getenv("CHROMADB_PORT", "8001")
-CHROMADB_URL = f"http://{CHROMADB_HOST}:{CHROMADB_PORT}"
 
 # Google Gemini AI configuration
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -51,23 +45,12 @@ async def read_root(request: Request):
 
 @app.get("/health")
 async def health_check():
-    try:
-        # Kiểm tra kết nối với ChromaDB bằng cách kết nối trực tiếp
-        client = chromadb.HttpClient(host=CHROMADB_HOST, port=int(CHROMADB_PORT))
-        # Thử tạo hoặc lấy collection để test kết nối
-        collections = client.list_collections()
-        chromadb_status = "connected"
-    except Exception as e:
-        chromadb_status = f"error: {str(e)}"
-    
     # Kiểm tra trạng thái Gemini AI
     gemini_status = "available" if llm and GOOGLE_API_KEY else "not_configured"
     
     return {
         "status": "healthy", 
         "message": "Service is up and running",
-        "chromadb_status": chromadb_status,
-        "chromadb_url": CHROMADB_URL,
         "gemini_ai_status": gemini_status
     }
 
@@ -82,7 +65,7 @@ async def chx1tream(query: HealthQuery):
                     system_prompt = """Bạn là một chatbot chuyên về sức khỏe và y tế. Hãy trả lời các câu hỏi một cách chính xác, hữu ích và dễ hiểu. 
                     
                     Nguyên tắc quan trọng:
-                    - Luôn khuyến khích người dùng đến gặp bác sĩ khi cần thiết
+                    - Luôn trả lời một cách chi tiết và đầy đủ
                     - Không tự chẩn đoán bệnh
                     - Đưa ra lời khuyên chung về sức khỏe
                     - Sử dụng tiếng Việt tự nhiên và thân thiện

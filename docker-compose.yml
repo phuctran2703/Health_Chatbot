@@ -1,44 +1,16 @@
 version: '3.8'
 
 services:
-  # ChromaDB service riêng
-  chromadb:
-    image: chromadb/chroma:latest
-    ports:
-      - "8001:8000"  # ChromaDB chạy trên port 8001
-    environment:
-      - CHROMA_HOST=0.0.0.0
-      - CHROMA_PORT=8000
-      - CHROMA_LOG_LEVEL=INFO
-    volumes:
-      - chromadb_data:/chroma/chroma
-    networks:
-      - health-network
-    restart: unless-stopped
-
   # Health Chatbot API service
   health-chatbot:
     build: .
     ports:
       - "8000:8000"  # API chạy trên port 8000
+    env_file:
+      - .env
     environment:
       - ENV=development
-      - CHROMADB_HOST=chromadb
-      - CHROMADB_PORT=8000
-      - CHROMADB_URL=http://chromadb:8000
     volumes:
       - .:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - chromadb
-    networks:
-      - health-network
     restart: unless-stopped
-
-volumes:
-  chromadb_data:
-    driver: local
-
-networks:
-  health-network:
-    driver: bridge

@@ -4,6 +4,11 @@ pydantic
 chromadb
 numpy<2.0
 jinja2
-langchain-google-genai
-langchain-core
 python-dotenv
+beautifulsoup4
+requests
+langchain
+langchain-core
+langchain-google-genai
+langchain-huggingface
+langchain-chroma
