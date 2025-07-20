@@ -17,6 +17,9 @@ load_dotenv()
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
+# Import health chatbot agent
+from model import health_chatbot, stream_chat_with_agent
+
 app = FastAPI(title="Health Chatbot API", version="1.0.0")
 
 # Mount static files and templates
@@ -45,56 +48,47 @@ async def read_root(request: Request):
 
 @app.get("/health")
 async def health_check():
-    # Kiểm tra trạng thái Gemini AI
+    # Kiểm tra trạng thái Gemini AI và RAG system
     gemini_status = "available" if llm and GOOGLE_API_KEY else "not_configured"
+    
+    try:
+        # Test health chatbot agent
+        agent_status = "available" if health_chatbot else "not_available"
+    except:
+        agent_status = "error"
     
     return {
         "status": "healthy", 
         "message": "Service is up and running",
-        "gemini_ai_status": gemini_status
+        "gemini_ai_status": gemini_status,
+        "rag_agent_status": agent_status
     }
 
 @app.post("/chat/stream")
-async def chx1tream(query: HealthQuery):
+async def chat_stream(query: HealthQuery):
     def generate_response():
         try:
-            # Sử dụng Gemini AI nếu có
-            if llm and GOOGLE_API_KEY:
+            # Sử dụng RAG agent trước
+            if health_chatbot and GOOGLE_API_KEY:
                 try:
-                    # Tạo system prompt cho chatbot y tế
-                    system_prompt = """Bạn là một chatbot chuyên về sức khỏe và y tế. Hãy trả lời các câu hỏi một cách chính xác, hữu ích và dễ hiểu. 
-                    
-                    Nguyên tắc quan trọng:
-                    - Luôn trả lời một cách chi tiết và đầy đủ
-                    - Không tự chẩn đoán bệnh
-                    - Đưa ra lời khuyên chung về sức khỏe
-                    - Sử dụng tiếng Việt tự nhiên và thân thiện
-                    - Chỉ trả lời các câu hỏi liên quan đến sức khỏe, không trả lời các câu hỏi ngoài lĩnh vực y tế
-                    - Nếu không chắc chắn, hãy thành thật nói không biết
-                    """
-                    
-                    # Gọi Gemini AI với streaming
-                    messages = [
-                        SystemMessage(content=system_prompt),
-                        HumanMessage(content=query.question)
-                    ]
-                    
                     # Gửi metadata trước
-                    yield f"data: {json.dumps({'type': 'metadata', 'ai_powered': True})}\n\n"
+                    yield f"data: {json.dumps({'type': 'metadata', 'ai_powered': True, 'rag_enabled': True})}\n\n"
                     
-                    # Stream thật từ Gemini AI
-                    for chunk in llm.stream(messages):
-                        if chunk.content:
-                            # Gửi từng chunk như Gemini AI trả về
-                            yield f"data: {json.dumps({'type': 'chunk', 'content': chunk.content})}\n\n"
+                    # Stream từ RAG agent
+                    config = {"configurable": {"thread_id": f"health_chat_{int(time.time())}"}}
+                    
+                    for chunk in stream_chat_with_agent(query.question, config):
+                        if chunk and chunk.strip():
+                            # Gửi từng chunk từ agent
+                            yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
                             time.sleep(0.05)  # Delay nhỏ để mượt hơn
                     
                     # Gửi signal kết thúc
                     yield f"data: {json.dumps({'type': 'end', 'status': 'success'})}\n\n"
                     return
                     
-                except Exception as ai_error:
-                    print(f"Gemini AI error: {ai_error}")
+                except Exception as agent_error:
+                    print(f"RAG Agent error: {agent_error}")
                     # Fallback to basic response
                     pass
             
@@ -102,7 +96,7 @@ async def chx1tream(query: HealthQuery):
             fallback_text = f"Cảm ơn bạn đã hỏi về '{query.question}'. Tôi là chatbot sức khỏe và khuyến khích bạn tham khảo ý kiến bác sĩ để được tư vấn chính xác nhất về vấn đề sức khỏe."
             
             # Gửi metadata
-            yield f"data: {json.dumps({'type': 'metadata', 'ai_powered': False})}\n\n"
+            yield f"data: {json.dumps({'type': 'metadata', 'ai_powered': False, 'rag_enabled': False})}\n\n"
             
             # Stream từng từ
             words = fallback_text.split()
@@ -116,7 +110,7 @@ async def chx1tream(query: HealthQuery):
             print(f"Stream chat error: {e}")
             error_text = f"Xin chào! Cảm ơn bạn đã hỏi về '{query.question}'. Hiện tại tôi đang gặp một chút khó khăn kỹ thuật nhưng vẫn có thể trò chuyện với bạn. Để được tư vấn chính xác về sức khỏe, bạn nên tham khảo ý kiến bác sĩ chuyên khoa nhé!"
             
-            yield f"data: {json.dumps({'type': 'metadata', 'ai_powered': False})}\n\n"
+            yield f"data: {json.dumps({'type': 'metadata', 'ai_powered': False, 'rag_enabled': False})}\n\n"
             
             words = error_text.split()
             for i, word in enumerate(words):
@@ -136,7 +130,6 @@ async def chx1tream(query: HealthQuery):
             "Access-Control-Allow-Headers": "*",
         }
     )
-
 
 
 if __name__ == "__main__":
