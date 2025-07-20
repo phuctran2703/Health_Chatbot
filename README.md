@@ -1,6 +1,9 @@
 # Health Chatbot: RAG-based Medical QA
 This project implements a comprehensive pipeline for building a health-focused retrieval-augmented generation (RAG) chatbot. The system leverages web data crawling, document processing, embedding & vector database construction, advanced information retrieval, and evaluation with real-world health Q&A pairs.
 
+- Detail code:  [Click Here](https://github.com/phuctran2703/Health_Chatbot/blob/main/health-chatbot.ipynb)
+- Demo: [Click Here](https://youtu.be/cJYNJ-8c08Y)
+
 ## 1. Data Crawling & Extraction
 - **Target Domain:** Health articles from VNVC, specifically the main article and its first-level links at: [[vnvc.vn](https://vnvc.vn).](https://vnvc.vn/benh-thuong-gap-o-tre-em-duoi-5-tuoi/.)
 - **Main Steps:**
