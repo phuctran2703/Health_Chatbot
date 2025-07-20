@@ -200,8 +200,6 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Access the app at: http://localhost:8000
-
 ## File Structure
 
 - `main.py`: FastAPI application with ChromaDB integration
